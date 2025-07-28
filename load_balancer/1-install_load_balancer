@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Configure Nginx server so that /redirect_me is redirecting to another page
+
+sudo apt-get update -y
+sudo apt-get install -y nginx
+config=\
+"server {
+        listen 80 default_server;
+        listen [::]:80 default_server;
+        root /var/www/html;
+        index index.html index.htm index.nginx-debian.html;
+        server_name _;
+        add_header X-Served-By \$HOSTNAME;
+}
+"
+sudo chown -R "$USER":"$USER" /etc/nginx/sites-available/default
+echo "$config" > /etc/nginx/sites-available/default
+sudo service nginx restart
+root@e3eaf1562279:/alu-system_engineering-devops/load_balancer# cat 1-install_load_balancer 
+#!/usr/bin/env bash
+#Bash script that installs HAProxy & makes configurations
+
+apt-get -y install software-properties-common
+add-apt-repository ppa:vbernat/haproxy-1.8
+apt-get update
+apt-get -y install haproxy
+echo "ENABLED=1" >> /etc/default/haproxy
+printf %s "listen 5819-webs
+    bind *:80
+    mode http
+    balance roundrobin
+    server 5955-web-01 54.152.43.54:80 check
+    server 5955-web-02 52.91.215.78:80 check
+" >> /etc/haproxy/haproxy.cfg
+sudo service haproxy restart
